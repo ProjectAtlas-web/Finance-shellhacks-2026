@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f9fd">
+  <meta name="description" content="Estimate how much a bond portfolio could lose if interest rates rise.">
+  <title>Bond Rate Risk Calculator</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23123b5d'/%3E%3Cpath d='M17 18h30v28H17z' fill='%23fff'/%3E%3Cpath d='M23 26h18M23 33h18M23 40h11' stroke='%23123b5d' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+:root {
+  color-scheme: light;
+  --navy: #1c4f7e;
+  --navy-deep: #123b63;
+  --blue: #2d7fbd;
+  --blue-bright: #6ab6e8;
+  --blue-soft: #eaf6ff;
+  --blue-pale: #f7fbff;
+  --ink: #18334a;
+  --muted: #526b7c;
+  --line: #c9deec;
+  --surface: #ffffff;
+  --background: #f3f9fd;
+  --loss: #9d2525;
+  --loss-soft: #fff1f0;
+  --warning: #7a341e;
+  --focus: #f3a712;
+  font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+  font-size: 18px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: auto; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 8% 4%, rgba(106, 182, 232, 0.16), transparent 25rem),
+    radial-gradient(circle at 96% 34%, rgba(45, 127, 189, 0.08), transparent 29rem),
+    var(--background);
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+button, input, select { font: inherit; }
+
+button, input, select, label { touch-action: manipulation; }
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.5rem;
+  left: 0.5rem;
+  transform: translateY(-180%);
+  background: white;
+  color: var(--navy-deep);
+  padding: 0.75rem 1rem;
+  border: 3px solid var(--focus);
+  border-radius: 0.8rem;
+  font-weight: 700;
+}
+
+.skip-link:focus { transform: translateY(0); }
+
+.site-header {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--navy-deep);
+  border-bottom: 1px solid #cce2f0;
+  box-shadow: 0 8px 30px rgba(18, 59, 99, 0.06);
+}
+
+.site-header::after {
+  content: "";
+  position: absolute;
+  right: -5rem;
+  bottom: -8rem;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 50%;
+  background: rgba(106, 182, 232, 0.12);
+  pointer-events: none;
+}
+
+.header-inner {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 2rem 0 2.1rem;
+}
+
+.brand-mark {
+  flex: 0 0 4rem;
+  width: 4rem;
+  height: 4rem;
+  border: 2px solid #b7d9ed;
+  border-radius: 1.25rem;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #ffffff, #e7f5fe);
+  box-shadow: 0 7px 18px rgba(30, 97, 145, 0.12);
+}
+
+.brand-mark svg { width: 2.2rem; height: 2.2rem; }
+.brand-mark svg path:first-child { fill: var(--navy); stroke: none; }
+.brand-mark svg path:last-child { fill: none; stroke: white; stroke-width: 2.4; stroke-linecap: round; }
+
+h1, h2, h3, p { margin-top: 0; }
+
+h1, h2, h3, .eyebrow, .step-kicker, label, button, legend {
+  font-family: ui-rounded, "Trebuchet MS", "Aptos Display", "Segoe UI", sans-serif;
+}
+
+h1 {
+  margin-bottom: 0.25rem;
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.eyebrow, .step-kicker {
+  margin-bottom: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow { color: var(--blue); }
+.header-copy { margin-bottom: 0; color: var(--muted); font-size: 1.08rem; }
+
+.page-shell {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 2.25rem auto 3rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.step {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1.35rem;
+  padding: clamp(1.1rem, 3vw, 2rem);
+  box-shadow: 0 12px 34px rgba(26, 79, 120, 0.08);
+}
+
+.step-heading {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 2px solid #e2eff7;
+}
+
+.step-number {
+  flex: 0 0 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--blue), var(--navy));
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 800;
+  box-shadow: 0 5px 12px rgba(28, 79, 126, 0.18);
+}
+
+.step-kicker { color: var(--blue); }
+
+h2 { margin-bottom: 0.35rem; color: var(--navy-deep); font-size: clamp(1.45rem, 3vw, 2rem); line-height: 1.2; }
+h3 { color: var(--navy-deep); }
+.step-heading p:last-child { margin-bottom: 0; color: var(--muted); }
+
+.bond-list { display: grid; gap: 1rem; }
+
+.bond-card {
+  border: 2px solid #d7e8f2;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(38, 103, 151, 0.05);
+}
+
+.bond-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(100deg, #f2faff, var(--blue-soft));
+  border-bottom: 1px solid #cfe4f1;
+}
+
+.bond-card-header h3 { margin: 0; font-size: 1.1rem; }
+
+.remove-bond {
+  min-height: 2.75rem;
+  border: 2px solid #a84d4d;
+  border-radius: 0.75rem;
+  background: white;
+  color: var(--loss);
+  padding: 0.35rem 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.remove-bond:hover { background: var(--loss-soft); }
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  padding: 1.2rem;
+}
+
+.field-wide { grid-column: 1 / -1; }
+.field label { display: block; margin-bottom: 0.4rem; font-weight: 750; color: var(--ink); }
+
+.field input,
+.field select {
+  width: 100%;
+  min-height: 3.25rem;
+  border: 2px solid #829bab;
+  border-radius: 0.75rem;
+  background: white;
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+}
+
+.field select { cursor: pointer; }
+.field input[readonly] { background: #eef3f6; color: #2f4553; }
+.optional-label { color: var(--muted); font-weight: 500; }
+
+.input-prefix, .input-suffix {
+  display: flex;
+  align-items: center;
+  border: 2px solid #829bab;
+  border-radius: 0.75rem;
+  background: white;
+  overflow: hidden;
+}
+
+.input-prefix:focus-within, .input-suffix:focus-within { outline: 4px solid rgba(243, 167, 18, .45); border-color: var(--navy-deep); }
+.input-prefix span, .input-suffix span { flex: 0 0 auto; padding: 0 0.75rem; font-weight: 700; color: var(--muted); }
+.input-prefix input, .input-suffix input { min-width: 0; border: 0; border-radius: 0; }
+.input-prefix input:focus, .input-suffix input:focus { outline: none; }
+
+input:focus, select:focus, button:focus-visible, .rate-option:has(input:focus-visible) {
+  outline: 4px solid rgba(243, 167, 18, .55);
+  outline-offset: 2px;
+}
+
+.field.invalid input, .field.invalid select, .field.invalid .input-prefix, .field.invalid .input-suffix { border-color: var(--loss); }
+.field.invalid input { background: #fffafa; }
+
+.help-text { min-height: 2.7em; margin: 0.35rem 0 0; color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
+.field-error { min-height: 1.45em; margin: 0.2rem 0 0; color: var(--loss); font-weight: 750; }
+
+.button {
+  min-height: 3.25rem;
+  border-radius: 0.85rem;
+  padding: 0.65rem 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.button-secondary { margin-top: 1.25rem; border: 2px solid var(--navy); background: white; color: var(--navy); }
+.button-secondary:hover { background: var(--blue-soft); border-color: var(--blue); }
+
+.direction-options,
+.rate-options {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  border: 0;
+}
+
+.direction-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rate-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.group-legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 0.6rem;
+  color: var(--navy-deep);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.group-legend + * { clear: left; }
+
+.rate-option { position: relative; cursor: pointer; }
+.rate-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+.rate-option-content {
+  min-height: 7.25rem;
+  display: grid;
+  place-content: center;
+  gap: 0.4rem;
+  padding: 1rem;
+  border: 2px solid #9ab3c3;
+  border-radius: 1rem;
+  background: white;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(28, 79, 126, 0.04);
+}
+
+.rate-option:hover .rate-option-content { background: var(--blue-soft); border-color: var(--blue); }
+.rate-option input:checked + .rate-option-content { border-color: var(--navy); background: linear-gradient(145deg, #f6fbff, var(--blue-soft)); box-shadow: inset 0 0 0 1px var(--navy), 0 7px 18px rgba(28, 79, 126, 0.1); }
+.rate-option input:checked + .rate-option-content::before { content: "Selected"; color: var(--navy); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.rate-main { font-size: 1.05rem; font-weight: 800; color: var(--navy-deep); }
+.rate-sub { color: var(--muted); }
+.direction-options .rate-option-content { min-height: 6.4rem; }
+
+.status-message { margin-bottom: 1rem; font-weight: 700; color: var(--warning); }
+.status-message:empty { display: none; }
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.summary-card {
+  min-height: 8.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.15rem;
+  border: 2px solid #c9deeb;
+  border-radius: 1rem;
+  background: var(--blue-pale);
+  box-shadow: 0 5px 16px rgba(28, 79, 126, 0.05);
+}
+
+.summary-card p { margin-bottom: 0.4rem; color: var(--muted); font-weight: 750; }
+.summary-card strong { font-size: clamp(1.45rem, 3.5vw, 2.25rem); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.loss-card { background: var(--loss-soft); border-color: #d9a9a7; }
+.loss-card strong { color: var(--loss); }
+.gain-card { background: var(--blue-soft); border-color: #9fc6da; }
+.gain-card strong { color: var(--navy-deep); }
+.after-card { background: var(--blue-soft); border-color: #a5c7d9; }
+
+.results-table-wrap { margin-top: 1.5rem; }
+table { width: 100%; border-collapse: collapse; background: white; }
+caption { padding: 0 0 0.65rem; text-align: left; color: var(--navy-deep); font-size: 1.1rem; font-weight: 800; }
+th, td { padding: 0.9rem 0.7rem; border-bottom: 1px solid var(--line); text-align: right; vertical-align: top; }
+th { background: linear-gradient(90deg, var(--navy-deep), var(--navy)); color: white; font-size: 0.85rem; line-height: 1.35; }
+th:first-child, td:first-child { text-align: left; }
+td { font-variant-numeric: tabular-nums; }
+.loss-text { color: var(--loss); font-weight: 800; }
+.gain-text { color: var(--navy-deep); font-weight: 800; }
+.bond-name-cell strong { display: block; color: var(--ink); }
+.structure-tag { display: block; margin-top: 0.2rem; color: var(--muted); font-size: 0.82rem; font-weight: 700; }
+.option-notice { border-left-color: var(--navy); }
+[hidden] { display: none !important; }
+.empty-row td { text-align: center; color: var(--muted); }
+
+.notice {
+  display: flex;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #c9e2f1;
+  border-left: 5px solid var(--blue);
+  border-radius: 1rem;
+  background: linear-gradient(110deg, var(--blue-soft), #f8fcff);
+}
+
+.notice svg { flex: 0 0 1.6rem; width: 1.6rem; height: 1.6rem; fill: none; stroke: var(--navy); stroke-width: 2; }
+.notice h3 { margin-bottom: 0.2rem; font-size: 1rem; }
+.notice p { margin: 0; color: #344c5d; }
+
+footer { padding: 1.5rem 1rem 2.5rem; text-align: center; color: var(--muted); }
+footer p { margin: 0; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 760px) {
+  :root { font-size: 17px; }
+  .header-inner { align-items: flex-start; }
+  .brand-mark { flex-basis: 3.25rem; width: 3.25rem; height: 3.25rem; }
+  .field-grid, .direction-options, .rate-options, .summary-grid { grid-template-columns: 1fr; }
+  .field-wide { grid-column: auto; }
+  .help-text { min-height: 0; }
+  .rate-option-content { min-height: 6.2rem; }
+
+  thead { display: none; }
+  table, tbody, tr, td { display: block; width: 100%; }
+  tbody { display: grid; gap: 0.85rem; }
+  tr { border: 2px solid var(--line); border-radius: 0.9rem; padding: 0.4rem 0.8rem; background: white; }
+  td { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; text-align: right; }
+  td::before { content: attr(data-label); flex: 0 0 48%; text-align: left; color: var(--muted); font-weight: 700; }
+  td:first-child { text-align: right; font-weight: 800; }
+  .bond-name-cell { display: grid; grid-template-columns: 48% minmax(0, 1fr); column-gap: 1rem; text-align: right; }
+  .bond-name-cell::before { grid-row: 1 / span 2; }
+  .bond-name-cell strong, .bond-name-cell .structure-tag { grid-column: 2; overflow-wrap: anywhere; }
+  .empty-row td { display: block; text-align: center; }
+  .empty-row td::before { content: none; }
+}
+
+@media (max-width: 480px) {
+  .header-inner, .page-shell { width: min(100% - 1rem, 1120px); }
+  .header-inner { padding: 1.2rem 0; }
+  .brand-mark { display: none; }
+  .page-shell { margin-top: 0.75rem; gap: 0.75rem; }
+  .step { padding: 0.9rem; }
+  .step-heading { gap: 0.7rem; }
+  .step-number { flex-basis: 2.4rem; width: 2.4rem; height: 2.4rem; }
+  .field-grid { padding: 0.9rem; }
+  .bond-card-header { align-items: flex-start; }
+  .remove-bond { min-height: 2.6rem; }
+  .notice { align-items: flex-start; }
+}
+
+@media (forced-colors: active) {
+  .rate-option input:checked + .rate-option-content { outline: 3px solid ButtonText; }
+}
+
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#calculator">Skip to calculator</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" role="img"><path d="M10 8h20v24H10z"/><path d="M15 15h10M15 21h10M15 27h6"/></svg>
+      </div>
+      <div>
+        <p class="eyebrow">A plain-language planning tool</p>
+        <h1>Bond Rate Risk Calculator</h1>
+        <p class="header-copy">See an estimate of how your bond portfolio could change when interest rates rise or fall.</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="calculator" class="page-shell">
+    <section class="step" aria-labelledby="step-1-title">
+      <div class="step-heading">
+        <span class="step-number" aria-hidden="true">1</span>
+        <div>
+          <p class="step-kicker">Step 1</p>
+          <h2 id="step-1-title">Enter your bonds</h2>
+          <p>Add the details shown on your bond statement. We start with two examples you can change.</p>
+        </div>
+      </div>
+
+      <div id="bond-list" class="bond-list" aria-live="polite"></div>
+      <button id="add-bond" class="button button-secondary" type="button">
+        <span aria-hidden="true">＋</span> Add another bond
+      </button>
+    </section>
+
+    <section class="step" aria-labelledby="step-2-title">
+      <div class="step-heading">
+        <span class="step-number" aria-hidden="true">2</span>
+        <div>
+          <p class="step-kicker">Step 2</p>
+          <h2 id="step-2-title">Choose a rate change</h2>
+          <p><strong>Rate change:</strong> A hypothetical rise or fall in market interest rates.</p>
+        </div>
+      </div>
+
+      <fieldset class="direction-options">
+        <legend class="group-legend">First, choose a direction</legend>
+        <label class="rate-option">
+          <input type="radio" name="rate-direction" value="1" checked>
+          <span class="rate-option-content">
+            <span class="rate-main">Rates rise</span>
+            <span class="rate-sub">Bond prices may fall</span>
+          </span>
+        </label>
+        <label class="rate-option">
+          <input type="radio" name="rate-direction" value="-1">
+          <span class="rate-option-content">
+            <span class="rate-main">Rates fall</span>
+            <span class="rate-sub">Bond prices may rise</span>
+          </span>
+        </label>
+      </fieldset>
+
+      <fieldset class="rate-options">
+        <legend class="group-legend">Then, choose the size</legend>
+        <label class="rate-option">
+          <input type="radio" name="rate-shock" value="0.0025">
+          <span class="rate-option-content">
+            <span class="rate-main">0.25%</span>
+            <span class="rate-sub">25 basis points</span>
+          </span>
+        </label>
+        <label class="rate-option">
+          <input type="radio" name="rate-shock" value="0.005">
+          <span class="rate-option-content">
+            <span class="rate-main">0.50%</span>
+            <span class="rate-sub">50 basis points</span>
+          </span>
+        </label>
+        <label class="rate-option">
+          <input type="radio" name="rate-shock" value="0.01" checked>
+          <span class="rate-option-content">
+            <span class="rate-main">1.00%</span>
+            <span class="rate-sub">100 basis points</span>
+          </span>
+        </label>
+        <label class="rate-option">
+          <input type="radio" name="rate-shock" value="0.02">
+          <span class="rate-option-content">
+            <span class="rate-main">2.00%</span>
+            <span class="rate-sub">200 basis points</span>
+          </span>
+        </label>
+      </fieldset>
+    </section>
+
+    <section class="step results-step" aria-labelledby="step-3-title">
+      <div class="step-heading">
+        <span class="step-number" aria-hidden="true">3</span>
+        <div>
+          <p class="step-kicker">Step 3</p>
+          <h2 id="step-3-title">View the estimated loss</h2>
+          <p><strong id="result-help-label">Estimated loss:</strong> <span id="result-help-text">The approximate decline in market value if rates rise.</span></p>
+        </div>
+      </div>
+
+      <div id="calculation-status" class="status-message" role="status" aria-live="polite"></div>
+
+      <div class="summary-grid" aria-label="Portfolio estimate">
+        <article class="summary-card">
+          <p>Current portfolio value</p>
+          <strong id="total-current">$0.00</strong>
+        </article>
+        <article class="summary-card change-card loss-card">
+          <p id="dollar-change-label">Estimated dollar loss</p>
+          <strong id="total-loss">Loss −$0.00</strong>
+        </article>
+        <article class="summary-card change-card loss-card">
+          <p id="percent-change-label">Estimated percentage loss</p>
+          <strong id="total-loss-percent">Loss −0.00%</strong>
+        </article>
+        <article class="summary-card after-card">
+          <p id="after-change-label">Estimated value after rate increase</p>
+          <strong id="total-after">$0.00</strong>
+        </article>
+      </div>
+
+      <div class="results-table-wrap">
+        <table>
+          <caption id="result-table-caption">Estimated loss for each valid bond</caption>
+          <thead>
+            <tr>
+              <th scope="col">Bond name</th>
+              <th scope="col">Current value</th>
+              <th id="bond-dollar-change-label" scope="col">Estimated dollar loss</th>
+              <th id="bond-percent-change-label" scope="col">Estimated percentage loss</th>
+              <th id="bond-after-change-label" scope="col">Value after rate increase</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+
+      <aside id="option-notice" class="notice option-notice" aria-labelledby="option-notice-title" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>
+        <div>
+          <h3 id="option-notice-title">Callable and putable bond estimate</h3>
+          <p>This estimate uses the bond’s final maturity date. A callable bond may have less price upside when rates fall, while a putable bond may have less downside when rates rise. Fully valuing these options requires the option schedule and market-volatility assumptions.</p>
+        </div>
+      </aside>
+
+      <aside class="notice" aria-labelledby="notice-title">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>
+        <div>
+          <h3 id="notice-title">Important notice</h3>
+          <p>This calculator provides an estimate based on duration and, when available, convexity. Actual bond prices may also be affected by credit risk, liquidity, embedded options, taxes, and changes in the shape of the yield curve. This is an educational tool, not investment advice.</p>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <footer>
+    <p>Calculations assume semiannual coupon payments. Results update as you make changes.</p>
+  </footer>
+
+  <template id="bond-template">
+    <article class="bond-card">
+      <div class="bond-card-header">
+        <h3>Bond <span class="bond-position"></span></h3>
+        <button class="remove-bond" type="button">Remove bond</button>
+      </div>
+      <div class="field-grid">
+        <div class="field field-wide">
+          <label>Bond name</label>
+          <input class="bond-name" type="text" autocomplete="off" maxlength="80">
+          <p class="help-text">A name you will recognize on your statement.</p>
+          <p class="field-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label>Bond structure</label>
+          <select class="bond-type">
+            <option value="bullet">Bullet</option>
+            <option value="callable">Callable</option>
+            <option value="putable">Putable</option>
+          </select>
+          <p class="help-text"><strong>Bullet:</strong> repaid at maturity. <strong>Callable:</strong> issuer may repay early. <strong>Putable:</strong> investor may sell back early.</p>
+          <p class="field-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label>Amount invested</label>
+          <div class="input-prefix"><span aria-hidden="true">$</span><input class="bond-amount" type="number" min="0.01" step="100" inputmode="decimal"></div>
+          <p class="help-text">The bond’s face amount. We adjust it using the current price.</p>
+          <p class="field-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label>Current price per $100</label>
+          <div class="input-prefix"><span aria-hidden="true">$</span><input class="bond-price" type="number" min="0.01" step="0.01" inputmode="decimal"></div>
+          <p class="help-text"><strong>Current price:</strong> The bond’s market price for every $100 of face value.</p>
+          <p class="field-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label>Annual coupon rate</label>
+          <div class="input-suffix"><input class="bond-coupon" type="number" min="0" step="0.01" inputmode="decimal"><span aria-hidden="true">%</span></div>
+          <p class="help-text"><strong>Coupon rate:</strong> The annual interest paid by the bond.</p>
+          <p class="field-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label>Maturity date <span class="optional-label">(optional)</span></label>
+          <input class="bond-maturity-date" type="date">
+          <p class="help-text"><strong>Maturity date:</strong> Choose the exact repayment date to calculate the remaining years automatically.</p>
+          <p class="field-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label><span class="years-label">Years until maturity</span></label>
+          <input class="bond-years" type="number" min="0.001" step="0.001" inputmode="decimal">
+          <p class="help-text years-help"><strong>Maturity:</strong> Enter decimal years, or choose a maturity date above.</p>
+          <p class="field-error" aria-live="polite"></p>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script>
+(function (root) {
+  "use strict";
+
+  const PAYMENTS_PER_YEAR = 2;
+  const MILLISECONDS_PER_DAY = 86400000;
+  const DAYS_PER_YEAR = 365.2425;
+  const BOND_TYPES = ["bullet", "callable", "putable"];
+
+  function finiteNumber(value) {
+    if (value === "" || value === null || value === undefined) return NaN;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : NaN;
+  }
+
+  function parseCalendarDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const timestamp = Date.UTC(year, month - 1, day);
+    const date = new Date(timestamp);
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+    return timestamp;
+  }
+
+  function localTodayTimestamp() {
+    const now = new Date();
+    return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  function maturityFromDate(maturityDate, asOfDate) {
+    const maturityTimestamp = parseCalendarDate(maturityDate);
+    const asOfTimestamp = asOfDate ? parseCalendarDate(asOfDate) : localTodayTimestamp();
+    if (maturityTimestamp === null || asOfTimestamp === null) return null;
+    const days = Math.round((maturityTimestamp - asOfTimestamp) / MILLISECONDS_PER_DAY);
+    return { days, years: days / DAYS_PER_YEAR };
+  }
+
+  function validateBond(bond) {
+    const errors = {};
+    const amount = finiteNumber(bond.amount);
+    const price = finiteNumber(bond.price);
+    const coupon = finiteNumber(bond.coupon);
+    const bondType = bond.type || "bullet";
+    const maturityDate = String(bond.maturityDate || "").trim();
+    const maturity = maturityDate ? maturityFromDate(maturityDate) : null;
+    const years = maturity ? maturity.years : finiteNumber(bond.years);
+
+    if (!bond.name || !String(bond.name).trim()) errors.name = "Enter a bond name.";
+    if (!(amount > 0)) errors.amount = "Enter an investment amount greater than zero.";
+    if (!(price > 0)) errors.price = "Enter a current price greater than zero.";
+    if (!(coupon >= 0)) errors.coupon = "Enter a coupon rate of zero or more.";
+    if (!BOND_TYPES.includes(bondType)) errors.type = "Choose Bullet, Callable, or Putable.";
+    if (maturityDate && maturity === null) errors.maturityDate = "Enter a valid maturity date.";
+    else if (maturityDate && !(maturity.days > 0)) errors.maturityDate = "Choose a maturity date after today.";
+    else if (!(years > 0)) errors.years = "Enter years to maturity greater than zero.";
+
+    return { valid: Object.keys(errors).length === 0, errors, values: { amount, price, coupon, years, bondType, maturityDate, daysRemaining: maturity ? maturity.days : null } };
+  }
+
+  function cashFlows(couponPercent, years) {
+    const periods = Math.max(1, Math.round(years * PAYMENTS_PER_YEAR));
+    const couponPayment = couponPercent / PAYMENTS_PER_YEAR;
+    const flows = [];
+    for (let period = 1; period <= periods; period += 1) {
+      flows.push(couponPayment + (period === periods ? 100 : 0));
+    }
+    return flows;
+  }
+
+  function presentValue(flows, periodRate) {
+    return flows.reduce((sum, cashFlow, index) => {
+      return sum + cashFlow / Math.pow(1 + periodRate, index + 1);
+    }, 0);
+  }
+
+  function yieldToMaturity(price, couponPercent, years) {
+    const flows = cashFlows(couponPercent, years);
+    let low = -0.999999;
+    let high = 10;
+
+    for (let iteration = 0; iteration < 180; iteration += 1) {
+      const mid = (low + high) / 2;
+      const value = presentValue(flows, mid);
+      if (value > price) low = mid;
+      else high = mid;
+    }
+
+    const periodRate = (low + high) / 2;
+    const annualYield = periodRate * PAYMENTS_PER_YEAR;
+    return Number.isFinite(annualYield) ? annualYield : 0;
+  }
+
+  function durationAndConvexity(price, couponPercent, years, annualYield) {
+    const flows = cashFlows(couponPercent, years);
+    const periodRate = annualYield / PAYMENTS_PER_YEAR;
+    let weightedTime = 0;
+    let convexitySum = 0;
+
+    flows.forEach((cashFlow, index) => {
+      const period = index + 1;
+      const discounted = cashFlow / Math.pow(1 + periodRate, period);
+      weightedTime += period * discounted;
+      convexitySum += cashFlow * period * (period + 1) / Math.pow(1 + periodRate, period + 2);
+    });
+
+    const macaulayYears = weightedTime / price / PAYMENTS_PER_YEAR;
+    const modifiedDuration = macaulayYears / (1 + periodRate);
+    const convexity = convexitySum / price / Math.pow(PAYMENTS_PER_YEAR, 2);
+    return {
+      modifiedDuration: Number.isFinite(modifiedDuration) ? modifiedDuration : 0,
+      convexity: Number.isFinite(convexity) ? convexity : 0
+    };
+  }
+
+  function calculateBond(bond, rateChange) {
+    const check = validateBond(bond);
+    if (!check.valid) return { valid: false, errors: check.errors };
+
+    const parsedRateChange = finiteNumber(rateChange);
+    const shock = Number.isFinite(parsedRateChange) ? parsedRateChange : 0;
+    const { amount, price, coupon, years, bondType, maturityDate, daysRemaining } = check.values;
+    const currentValue = amount * price / 100;
+    const ytm = yieldToMaturity(price, coupon, years);
+    const risk = durationAndConvexity(price, coupon, years, ytm);
+    const estimatedChange = -risk.modifiedDuration * shock + 0.5 * risk.convexity * shock * shock;
+    const changePercent = Math.max(-1, estimatedChange);
+    const dollarChange = currentValue * changePercent;
+    const lossPercent = Math.max(0, -changePercent);
+    const gainPercent = Math.max(0, changePercent);
+    const loss = Math.max(0, -dollarChange);
+    const gain = Math.max(0, dollarChange);
+    const afterValue = Math.max(0, currentValue + dollarChange);
+
+    const numbers = [currentValue, ytm, risk.modifiedDuration, risk.convexity, changePercent, dollarChange, lossPercent, gainPercent, loss, gain, afterValue];
+    if (!numbers.every(Number.isFinite)) return { valid: false, errors: { calculation: "This bond could not be calculated. Check its values." } };
+
+    return {
+      valid: true,
+      name: String(bond.name).trim(),
+      type: bondType,
+      maturityDate,
+      years,
+      daysRemaining,
+      currentValue,
+      ytm,
+      modifiedDuration: risk.modifiedDuration,
+      convexity: risk.convexity,
+      changePercent,
+      dollarChange,
+      lossPercent,
+      gainPercent,
+      loss,
+      gain,
+      afterValue
+    };
+  }
+
+  function calculatePortfolio(bonds, rateChange) {
+    const results = bonds.map((bond) => calculateBond(bond, rateChange));
+    const validResults = results.filter((result) => result.valid);
+    const totals = validResults.reduce((sum, result) => {
+      sum.currentValue += result.currentValue;
+      sum.dollarChange += result.dollarChange;
+      sum.loss += result.loss;
+      sum.gain += result.gain;
+      sum.afterValue += result.afterValue;
+      return sum;
+    }, { currentValue: 0, dollarChange: 0, loss: 0, gain: 0, afterValue: 0 });
+    totals.changePercent = totals.currentValue > 0 ? totals.dollarChange / totals.currentValue : 0;
+    totals.lossPercent = totals.currentValue > 0 ? totals.loss / totals.currentValue : 0;
+    totals.gainPercent = totals.currentValue > 0 ? totals.gain / totals.currentValue : 0;
+    return { results, validResults, totals };
+  }
+
+  root.BondMath = { maturityFromDate, validateBond, yieldToMaturity, durationAndConvexity, calculateBond, calculatePortfolio };
+})(typeof globalThis !== "undefined" ? globalThis : window);
+
+</script>
+  <script>
+(function () {
+  "use strict";
+
+  const examples = [
+    { name: "5-year U.S. Treasury note", type: "bullet", amount: 25000, price: 98.5, coupon: 3.5, years: 5 },
+    { name: "10-year investment-grade bond", type: "callable", amount: 25000, price: 101.25, coupon: 4.75, years: 10 }
+  ];
+
+  const bondList = document.getElementById("bond-list");
+  const template = document.getElementById("bond-template");
+  const addButton = document.getElementById("add-bond");
+  const resultsBody = document.getElementById("results-body");
+  const status = document.getElementById("calculation-status");
+  const totalCurrent = document.getElementById("total-current");
+  const totalLoss = document.getElementById("total-loss");
+  const totalLossPercent = document.getElementById("total-loss-percent");
+  const totalAfter = document.getElementById("total-after");
+  const resultTitle = document.getElementById("step-3-title");
+  const resultHelpLabel = document.getElementById("result-help-label");
+  const resultHelpText = document.getElementById("result-help-text");
+  const dollarChangeLabel = document.getElementById("dollar-change-label");
+  const percentChangeLabel = document.getElementById("percent-change-label");
+  const afterChangeLabel = document.getElementById("after-change-label");
+  const resultTableCaption = document.getElementById("result-table-caption");
+  const bondDollarChangeLabel = document.getElementById("bond-dollar-change-label");
+  const bondPercentChangeLabel = document.getElementById("bond-percent-change-label");
+  const bondAfterChangeLabel = document.getElementById("bond-after-change-label");
+  const optionNotice = document.getElementById("option-notice");
+  let nextBondId = 1;
+
+  const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const percent = new Intl.NumberFormat("en-US", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function setInputValue(card, selector, value) {
+    card.querySelector(selector).value = value;
+  }
+
+  function assignField(card, selector, labelText, id) {
+    const input = card.querySelector(selector);
+    const field = input.closest(".field");
+    const label = field.querySelector("label");
+    const error = field.querySelector(".field-error");
+    input.id = id;
+    label.htmlFor = id;
+    error.id = id + "-error";
+    input.setAttribute("aria-describedby", id + "-help " + error.id);
+    field.querySelector(".help-text").id = id + "-help";
+    input.dataset.label = labelText;
+  }
+
+  function syncMaturityFromDate(card) {
+    const dateInput = card.querySelector(".bond-maturity-date");
+    const yearsInput = card.querySelector(".bond-years");
+    const yearsLabel = card.querySelector(".years-label");
+    const yearsHelp = card.querySelector(".years-help");
+    if (!dateInput.value) {
+      yearsInput.readOnly = false;
+      yearsLabel.textContent = "Years until maturity";
+      yearsHelp.innerHTML = "<strong>Maturity:</strong> Enter decimal years, or choose a maturity date above.";
+      return;
+    }
+    const maturity = BondMath.maturityFromDate(dateInput.value);
+    yearsInput.readOnly = true;
+    yearsLabel.textContent = "Years until maturity (calculated)";
+    if (maturity && maturity.days > 0) {
+      yearsInput.value = maturity.years.toFixed(3);
+      yearsHelp.innerHTML = "<strong>Calculated:</strong> " + maturity.days.toLocaleString("en-US") + " days, or " + maturity.years.toFixed(3) + " years.";
+    } else {
+      yearsInput.value = "";
+      yearsHelp.innerHTML = "<strong>Calculated:</strong> Choose a future maturity date.";
+    }
+  }
+
+  function addBond(values, focusName) {
+    const fragment = template.content.cloneNode(true);
+    const card = fragment.querySelector(".bond-card");
+    const bondId = nextBondId++;
+    card.dataset.bondId = String(bondId);
+
+    assignField(card, ".bond-name", "Bond name", "bond-" + bondId + "-name");
+    assignField(card, ".bond-type", "Bond structure", "bond-" + bondId + "-type");
+    assignField(card, ".bond-amount", "Amount invested", "bond-" + bondId + "-amount");
+    assignField(card, ".bond-price", "Current price per $100", "bond-" + bondId + "-price");
+    assignField(card, ".bond-coupon", "Annual coupon rate", "bond-" + bondId + "-coupon");
+    assignField(card, ".bond-maturity-date", "Maturity date", "bond-" + bondId + "-maturity-date");
+    assignField(card, ".bond-years", "Years until maturity", "bond-" + bondId + "-years");
+
+    setInputValue(card, ".bond-name", values.name || "");
+    setInputValue(card, ".bond-type", values.type || "bullet");
+    setInputValue(card, ".bond-amount", values.amount ?? "");
+    setInputValue(card, ".bond-price", values.price ?? "");
+    setInputValue(card, ".bond-coupon", values.coupon ?? "");
+    setInputValue(card, ".bond-maturity-date", values.maturityDate || "");
+    setInputValue(card, ".bond-years", values.years ?? "");
+    syncMaturityFromDate(card);
+
+    card.querySelector(".bond-maturity-date").addEventListener("input", () => syncMaturityFromDate(card));
+
+    card.querySelector(".remove-bond").addEventListener("click", () => {
+      const cards = bondList.querySelectorAll(".bond-card");
+      const fallback = card.previousElementSibling || card.nextElementSibling || addButton;
+      card.remove();
+      updatePositions();
+      updateResults();
+      if (fallback && typeof fallback.focus === "function") fallback.focus();
+      if (cards.length === 1) status.textContent = "No bonds remain. Add a bond to calculate an estimate.";
+    });
+
+    card.addEventListener("input", updateResults);
+    bondList.appendChild(fragment);
+    updatePositions();
+    updateResults();
+    if (focusName) card.querySelector(".bond-name").focus();
+  }
+
+  function updatePositions() {
+    bondList.querySelectorAll(".bond-card").forEach((card, index) => {
+      card.querySelector(".bond-position").textContent = String(index + 1);
+      const name = card.querySelector(".bond-name").value.trim();
+      card.querySelector(".remove-bond").setAttribute("aria-label", "Remove " + (name || "bond " + (index + 1)));
+    });
+  }
+
+  function readBonds() {
+    return Array.from(bondList.querySelectorAll(".bond-card")).map((card) => ({
+      card,
+      name: card.querySelector(".bond-name").value,
+      type: card.querySelector(".bond-type").value,
+      amount: card.querySelector(".bond-amount").value,
+      price: card.querySelector(".bond-price").value,
+      coupon: card.querySelector(".bond-coupon").value,
+      maturityDate: card.querySelector(".bond-maturity-date").value,
+      years: card.querySelector(".bond-years").value
+    }));
+  }
+
+  function selectedShock() {
+    const checked = document.querySelector('input[name="rate-shock"]:checked');
+    const direction = document.querySelector('input[name="rate-direction"]:checked');
+    return (checked ? Number(checked.value) : 0.01) * (direction ? Number(direction.value) : 1);
+  }
+
+  function showErrors(item, result) {
+    const map = { name: ".bond-name", type: ".bond-type", amount: ".bond-amount", price: ".bond-price", coupon: ".bond-coupon", maturityDate: ".bond-maturity-date", years: ".bond-years" };
+    Object.entries(map).forEach(([key, selector]) => {
+      const input = item.card.querySelector(selector);
+      const field = input.closest(".field");
+      const error = field.querySelector(".field-error");
+      const message = result.errors && result.errors[key] ? result.errors[key] : "";
+      error.textContent = message;
+      field.classList.toggle("invalid", Boolean(message));
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+    });
+  }
+
+  function resultRow(result, isGain) {
+    const row = document.createElement("tr");
+    const word = isGain ? "Gain" : "Loss";
+    const sign = isGain ? "+" : "−";
+    const amount = isGain ? result.gain : result.loss;
+    const rate = isGain ? result.gainPercent : result.lossPercent;
+    const typeLabels = { bullet: "Bullet bond", callable: "Callable bond — maturity-based estimate", putable: "Putable bond — maturity-based estimate" };
+    const nameCell = document.createElement("td");
+    nameCell.dataset.label = "Bond name";
+    nameCell.className = "bond-name-cell";
+    nameCell.setAttribute("aria-label", "Bond name: " + result.name + ", " + (typeLabels[result.type] || "Bullet bond"));
+    const nameStrong = document.createElement("strong");
+    nameStrong.textContent = result.name;
+    const typeTag = document.createElement("span");
+    typeTag.className = "structure-tag";
+    typeTag.textContent = typeLabels[result.type] || "Bullet bond";
+    nameCell.append(nameStrong, typeTag);
+    row.appendChild(nameCell);
+    const values = [
+      ["Current value", currency.format(result.currentValue), ""],
+      ["Estimated dollar " + word.toLowerCase(), word + " " + sign + currency.format(amount), isGain ? "gain-text" : "loss-text"],
+      ["Estimated percentage " + word.toLowerCase(), word + " " + sign + percent.format(rate), isGain ? "gain-text" : "loss-text"],
+      ["Value after rate change", currency.format(result.afterValue), ""]
+    ];
+    values.forEach(([label, value, className]) => {
+      const cell = document.createElement("td");
+      cell.dataset.label = label;
+      cell.textContent = value;
+      cell.setAttribute("aria-label", label + ": " + value);
+      if (className) cell.className = className;
+      row.appendChild(cell);
+    });
+    return row;
+  }
+
+  function updateResults() {
+    updatePositions();
+    const items = readBonds();
+    const shock = selectedShock();
+    const isGain = shock < 0;
+    const portfolio = BondMath.calculatePortfolio(items, shock);
+    resultsBody.replaceChildren();
+
+    resultTitle.textContent = isGain ? "View the estimated gain" : "View the estimated loss";
+    resultHelpLabel.textContent = isGain ? "Estimated gain:" : "Estimated loss:";
+    resultHelpText.textContent = isGain ? "The approximate increase in market value if rates fall." : "The approximate decline in market value if rates rise.";
+    dollarChangeLabel.textContent = isGain ? "Estimated dollar gain" : "Estimated dollar loss";
+    percentChangeLabel.textContent = isGain ? "Estimated percentage gain" : "Estimated percentage loss";
+    afterChangeLabel.textContent = isGain ? "Estimated value after rate decrease" : "Estimated value after rate increase";
+    resultTableCaption.textContent = isGain ? "Estimated gain for each valid bond" : "Estimated loss for each valid bond";
+    bondDollarChangeLabel.textContent = isGain ? "Estimated dollar gain" : "Estimated dollar loss";
+    bondPercentChangeLabel.textContent = isGain ? "Estimated percentage gain" : "Estimated percentage loss";
+    bondAfterChangeLabel.textContent = isGain ? "Value after rate decrease" : "Value after rate increase";
+    document.querySelectorAll(".change-card").forEach((card) => {
+      card.classList.toggle("gain-card", isGain);
+      card.classList.toggle("loss-card", !isGain);
+    });
+
+    portfolio.results.forEach((result, index) => showErrors(items[index], result));
+    portfolio.validResults.forEach((result) => resultsBody.appendChild(resultRow(result, isGain)));
+    optionNotice.hidden = !portfolio.validResults.some((result) => result.type === "callable" || result.type === "putable");
+
+    if (!portfolio.validResults.length) {
+      const row = document.createElement("tr");
+      row.className = "empty-row";
+      const cell = document.createElement("td");
+      cell.colSpan = 5;
+      cell.textContent = "Enter at least one valid bond to see an estimate.";
+      row.appendChild(cell);
+      resultsBody.appendChild(row);
+    }
+
+    totalCurrent.textContent = currency.format(portfolio.totals.currentValue);
+    totalLoss.textContent = isGain ? "Gain +" + currency.format(portfolio.totals.gain) : "Loss −" + currency.format(portfolio.totals.loss);
+    totalLossPercent.textContent = isGain ? "Gain +" + percent.format(portfolio.totals.gainPercent) : "Loss −" + percent.format(portfolio.totals.lossPercent);
+    totalAfter.textContent = currency.format(portfolio.totals.afterValue);
+
+    const invalidCount = portfolio.results.length - portfolio.validResults.length;
+    if (!items.length) status.textContent = "No bonds remain. Add a bond to calculate an estimate.";
+    else if (invalidCount) status.textContent = invalidCount + (invalidCount === 1 ? " bond needs" : " bonds need") + " correction and is not included in the totals.";
+    else status.textContent = "";
+  }
+
+  addButton.addEventListener("click", () => addBond({ name: "", type: "bullet", amount: "", price: 100, coupon: "", maturityDate: "", years: "" }, true));
+  document.querySelectorAll('input[name="rate-shock"], input[name="rate-direction"]').forEach((radio) => radio.addEventListener("change", updateResults));
+
+  examples.forEach((bond) => addBond(bond, false));
+
+  function registerWebMcp() {
+    const context = document.modelContext;
+    if (!context || typeof context.registerTool !== "function") return;
+    try {
+      context.registerTool({
+        name: "set_bond_rate_scenario",
+        title: "Set bond rate scenario",
+        description: "Replace the visible bond list, select a rate rise or fall, and return the updated portfolio estimate.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            bonds: {
+              type: "array",
+              minItems: 1,
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" }, amount: { type: "number", exclusiveMinimum: 0 },
+                  price: { type: "number", exclusiveMinimum: 0 }, coupon: { type: "number", minimum: 0 },
+                  type: { type: "string", enum: ["bullet", "callable", "putable"] },
+                  maturityDate: { type: "string" }, years: { type: "number", exclusiveMinimum: 0 }
+                },
+                required: ["name", "type", "amount", "price", "coupon"],
+                anyOf: [{ required: ["years"] }, { required: ["maturityDate"] }], additionalProperties: false
+              }
+            },
+            rateChange: { type: "number", enum: [-0.02, -0.01, -0.005, -0.0025, 0.0025, 0.005, 0.01, 0.02] }
+          },
+          required: ["bonds", "rateChange"], additionalProperties: false
+        },
+        annotations: { readOnlyHint: false, untrustedContentHint: false },
+        execute(input) {
+          const supportedChanges = [-0.02, -0.01, -0.005, -0.0025, 0.0025, 0.005, 0.01, 0.02];
+          if (!input || !Array.isArray(input.bonds) || !supportedChanges.includes(input.rateChange)) throw new Error("Provide valid bonds and a supported rate change.");
+          const checked = document.querySelector('input[name="rate-shock"][value="' + Math.abs(input.rateChange) + '"]');
+          const direction = document.querySelector('input[name="rate-direction"][value="' + (input.rateChange < 0 ? -1 : 1) + '"]');
+          if (!checked || !direction) throw new Error("The requested rate change is not available.");
+          const validation = BondMath.calculatePortfolio(input.bonds, input.rateChange);
+          if (validation.validResults.length !== input.bonds.length) throw new Error("Every bond must have a valid structure, name, positive amount, price, and future maturity or decimal years; coupon cannot be negative.");
+          bondList.replaceChildren();
+          input.bonds.forEach((bond) => addBond(bond, false));
+          checked.checked = true;
+          direction.checked = true;
+          updateResults();
+          const updated = BondMath.calculatePortfolio(input.bonds, input.rateChange);
+          return { scenario: input.rateChange < 0 ? "rates_fall" : "rates_rise", validBondCount: updated.validResults.length, currentValue: updated.totals.currentValue, estimatedLoss: updated.totals.loss, estimatedGain: updated.totals.gain, estimatedValueAfterChange: updated.totals.afterValue };
+        }
+      });
+    } catch (error) {
+      console.warn("WebMCP tool registration was not available.", error);
+    }
+  }
+
+  registerWebMcp();
+})();
+
+</script>
+</body>
+</html>
